@@ -36,15 +36,15 @@
       <h2>Клиент</h2>
       <div class="field">
         <label>Название проекта / клиента</label>
-        <input type="text" id="in-client" placeholder="напр. Кофейня «Ремесло»" oninput="renderConstructor()">
+        <input type="text" id="in-client" placeholder="напр. Кофейня «Ремесло»" oninput="refreshPreview()">
       </div>
       <div class="field">
         <label>Ниша</label>
-        <input type="text" id="in-niche" placeholder="напр. кофейня, ИИ-стартап, барбершоп" oninput="renderConstructor()">
+        <input type="text" id="in-niche" placeholder="напр. кофейня, ИИ-стартап, барбершоп" oninput="refreshPreview()">
       </div>
       <div class="field">
         <label>Контекст / боль клиента</label>
-        <textarea id="in-pain" placeholder="напр. рейтинг 4.1 на Картах, 12 отзывов, жалобы на медленный сервис" oninput="renderConstructor()"></textarea>
+        <textarea id="in-pain" placeholder="напр. рейтинг 4.1 на Картах, 12 отзывов, жалобы на медленный сервис" oninput="refreshPreview()"></textarea>
       </div>
 
       <h2>Смета</h2>
@@ -60,9 +60,9 @@
 
       <h2>Кейсы в КП</h2>
       <div class="case-toggle">
-        <label class="case-chip"><input type="checkbox" id="c-zhem" checked onchange="renderConstructor()"> Жемчужина</label>
-        <label class="case-chip"><input type="checkbox" id="c-art" checked onchange="renderConstructor()"> АртВитрина</label>
-        <label class="case-chip"><input type="checkbox" id="c-kit" checked onchange="renderConstructor()"> КИТ</label>
+        <label class="case-chip"><input type="checkbox" id="c-zhem" checked onchange="refreshPreview()"> Жемчужина</label>
+        <label class="case-chip"><input type="checkbox" id="c-art" checked onchange="refreshPreview()"> АртВитрина</label>
+        <label class="case-chip"><input type="checkbox" id="c-kit" checked onchange="refreshPreview()"> КИТ</label>
       </div>
       <div class="hint">По умолчанию — все три кейса. Снимите галочку, если какой-то не подходит под клиента.</div>
     </div>

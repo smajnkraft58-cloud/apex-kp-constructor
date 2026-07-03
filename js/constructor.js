@@ -10,6 +10,7 @@ function blankKp() {
     client: '', niche: '', pain: '',
     items: [{ id: uid(), name: '', type: 'once', price: '' }],
     cases: { zhem: true, art: true, kit: true },
+    goalHtml: null, termsHtml: null,
     createdAt: null, updatedAt: null
   };
 }
@@ -46,10 +47,12 @@ function removeItem(id) {
   if (currentKp.items.length === 0) currentKp.items.push({ id: uid(), name: '', type: 'once', price: '' });
   renderConstructor();
 }
+// Обновляет значение позиции без пересоздания строк ввода — иначе поле теряет
+// фокус после каждого символа, т.к. пересобранный DOM создаёт новый <input>.
 function updateItem(id, field, val) {
   const it = currentKp.items.find(i => i.id === id);
   if (it) it[field] = val;
-  renderConstructor();
+  refreshPreview();
 }
 
 function renderItemRows() {
@@ -64,7 +67,7 @@ function renderItemRows() {
       </select>
       <div class="price-in">
         <input type="text" inputmode="numeric" placeholder="0" value="${it.price}"
-          oninput="updateItem('${it.id}','price',this.value.replace(/[^0-9]/g,''))">
+          oninput="this.value=this.value.replace(/[^0-9]/g,''); updateItem('${it.id}','price',this.value)">
       </div>
       <button onclick="removeItem('${it.id}')" title="Удалить">✕</button>
     </div>
@@ -91,9 +94,27 @@ function syncFormIntoState() {
   };
 }
 
+// Полная перерисовка: строки сметы + предпросмотр. Только для структурных
+// изменений (новое/загруженное КП, добавление/удаление позиции) — иначе
+// поле ввода, в котором печатает пользователь, будет пересоздано и потеряет фокус.
 function renderConstructor() {
   renderItemRows();
+  refreshPreview();
+}
+
+// Захватывает то, что пользователь вручную поправил в редактируемых блоках
+// документа, чтобы следующая перерисовка не затёрла эти правки.
+function captureEditableState() {
+  const g = document.getElementById('goal-edit');
+  const t = document.getElementById('terms-edit');
+  if (g) currentKp.goalHtml = g.innerHTML;
+  if (t) currentKp.termsHtml = t.innerHTML;
+}
+
+// Лёгкое обновление: суммы + документ-предпросмотр, без пересборки строк сметы.
+function refreshPreview() {
   syncFormIntoState();
+  captureEditableState();
 
   const t = computeTotals(currentKp.items);
   document.getElementById('sumOnce').textContent = fmtMoney(t.once);
@@ -110,6 +131,24 @@ function renderConstructor() {
   const hasMonth = monthItems.length > 0;
 
   const goalDefault = `Создание сильного digital-присутствия проекта${niche ? ' в нише «' + niche + '»' : ''}: ${hasMonth ? 'системное ежемесячное сопровождение' : ''}${hasMonth && hasOnce ? ' + ' : ''}${hasOnce ? 'разовая реализация ключевых задач' : ''}${!hasOnce && !hasMonth ? 'полное погружение в задачи маркетинга' : ''}.${pain ? '\n\nТекущая ситуация: ' + pain + '.' : ''}`;
+
+  const termsDefault = `
+        <div class="term-block">
+          <div class="tt">Сроки</div>
+          <div class="td2">${hasOnce ? 'Разовые работы — от 7 до 14 рабочих дней с момента согласования брифа.' : ''} ${hasMonth ? 'Ежемесячное сопровождение — на постоянной основе, по календарному плану.' : ''}</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Правки</div>
+          <div class="td2">В стоимость включено до 2 раундов правок на этапе реализации. Изменения сверх согласованного объёма обсуждаются отдельно.</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Оплата</div>
+          <div class="td2">${hasOnce ? 'Разовые работы — предоплата 50%, остаток после сдачи. ' : ''}${hasMonth ? 'Ежемесячное сопровождение — оплата в начале каждого месяца.' : ''}</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Передача материалов</div>
+          <div class="td2">После оплаты клиент получает доступ ко всем разработанным материалам в формате, пригодном для дальнейшего использования.</div>
+        </div>`;
 
   const kpDate = currentKp.createdAt ? new Date(currentKp.createdAt) : new Date();
 
@@ -135,7 +174,7 @@ function renderConstructor() {
 
     <div class="kp-block">
       <div class="eyebrow">Цель сотрудничества</div>
-      <div class="goal-text" contenteditable="true" id="goal-edit">${escapeHtml(goalDefault).replace(/\n/g, '<br><br>')}</div>
+      <div class="goal-text" contenteditable="true" id="goal-edit" oninput="captureEditableState()">${currentKp.goalHtml != null ? currentKp.goalHtml : escapeHtml(goalDefault).replace(/\n/g, '<br><br>')}</div>
       <div class="editable-note">✎ этот текст можно отредактировать прямо здесь перед экспортом</div>
     </div>
 
@@ -177,24 +216,7 @@ function renderConstructor() {
 
     <div class="kp-block">
       <h3 class="kp-h">Условия работы</h3>
-      <div class="terms-grid" contenteditable="true" id="terms-edit">
-        <div class="term-block">
-          <div class="tt">Сроки</div>
-          <div class="td2">${hasOnce ? 'Разовые работы — от 7 до 14 рабочих дней с момента согласования брифа.' : ''} ${hasMonth ? 'Ежемесячное сопровождение — на постоянной основе, по календарному плану.' : ''}</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Правки</div>
-          <div class="td2">В стоимость включено до 2 раундов правок на этапе реализации. Изменения сверх согласованного объёма обсуждаются отдельно.</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Оплата</div>
-          <div class="td2">${hasOnce ? 'Разовые работы — предоплата 50%, остаток после сдачи. ' : ''}${hasMonth ? 'Ежемесячное сопровождение — оплата в начале каждого месяца.' : ''}</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Передача материалов</div>
-          <div class="td2">После оплаты клиент получает доступ ко всем разработанным материалам в формате, пригодном для дальнейшего использования.</div>
-        </div>
-      </div>
+      <div class="terms-grid" contenteditable="true" id="terms-edit" oninput="captureEditableState()">${currentKp.termsHtml != null ? currentKp.termsHtml : termsDefault}</div>
       <div class="editable-note">✎ блок условий тоже редактируется прямо здесь</div>
     </div>
 
@@ -250,6 +272,7 @@ function caseCard(key) {
 // Сохраняет текущую КП в историю (создаёт запись или обновляет существующую)
 function saveCurrentKp() {
   syncFormIntoState();
+  captureEditableState();
   const t = computeTotals(currentKp.items);
   currentKp.totals = t;
   if (!currentKp.id) currentKp.id = uid();
