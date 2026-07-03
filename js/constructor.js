@@ -404,7 +404,14 @@ async function exportPDF() {
     let pageHasContent = false;
 
     for (const block of blocks) {
-      const canvas = await html2canvas(block, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      const canvas = await html2canvas(block, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        // Подсказки редактирования ("этот текст можно отредактировать...")
+        // нужны только на экране, в готовом КП их быть не должно.
+        ignoreElements: node => node.classList && node.classList.contains('editable-note')
+      });
       const imgW = pageW;
       const imgH = canvas.height * imgW / canvas.width;
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
