@@ -66,6 +66,25 @@
         <label class="case-chip"><input type="checkbox" id="c-kit" checked onchange="refreshPreview()"> КИТ</label>
       </div>
       <div class="hint">По умолчанию — все три кейса. Снимите галочку, если какой-то не подходит под клиента.</div>
+
+      <h2>Условия работы</h2>
+      <div class="field">
+        <label>Сроки</label>
+        <textarea id="in-term-sroki" oninput="refreshPreview()"></textarea>
+      </div>
+      <div class="field">
+        <label>Правки</label>
+        <textarea id="in-term-pravki" oninput="refreshPreview()"></textarea>
+      </div>
+      <div class="field">
+        <label>Оплата</label>
+        <textarea id="in-term-oplata" oninput="refreshPreview()"></textarea>
+      </div>
+      <div class="field">
+        <label>Передача материалов</label>
+        <textarea id="in-term-peredacha" oninput="refreshPreview()"></textarea>
+      </div>
+      <div class="hint">Эти 4 поля полностью редактируются здесь и сразу видны в превью справа — правьте под конкретного клиента.</div>
     </div>
 
     <div class="preview-wrap">

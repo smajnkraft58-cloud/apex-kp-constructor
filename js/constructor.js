@@ -2,6 +2,17 @@
 
 let currentKp = null; // текущая редактируемая КП (объект-состояние)
 
+// Стартовый шаблон блока "Условия работы" — целиком редактируется в левой
+// панели (не в превью), поэтому дальше это просто обычные текстовые поля.
+function defaultTerms() {
+  return {
+    sroki: 'Разовые работы — от 7 до 14 рабочих дней с момента согласования брифа. Ежемесячное сопровождение — на постоянной основе, по календарному плану.',
+    pravki: 'В стоимость включено до 2 раундов правок на этапе реализации. Изменения сверх согласованного объёма обсуждаются отдельно.',
+    oplata: 'Разовые работы — предоплата 50%, остаток после сдачи. Ежемесячное сопровождение — оплата в начале каждого месяца.',
+    peredacha: 'После оплаты клиент получает доступ ко всем разработанным материалам в формате, пригодном для дальнейшего использования.'
+  };
+}
+
 function blankKp() {
   return {
     id: null,
@@ -10,7 +21,8 @@ function blankKp() {
     client: '', niche: '', pain: '',
     items: [{ id: uid(), name: '', type: 'once', price: '' }],
     cases: { zhem: true, art: true, kit: true },
-    goalHtml: null, termsHtml: null,
+    goalHtml: null,
+    terms: defaultTerms(),
     notes: '',
     createdAt: null, updatedAt: null
   };
@@ -24,19 +36,29 @@ function newKp() {
   document.getElementById('c-zhem').checked = true;
   document.getElementById('c-art').checked = true;
   document.getElementById('c-kit').checked = true;
+  fillTermFields(currentKp.terms);
   renderConstructor();
 }
 
 function loadKpIntoForm(record) {
   currentKp = JSON.parse(JSON.stringify(record));
+  if (!currentKp.terms) currentKp.terms = defaultTerms(); // старые записи без этого поля
   document.getElementById('in-client').value = currentKp.client;
   document.getElementById('in-niche').value = currentKp.niche;
   document.getElementById('in-pain').value = currentKp.pain;
   document.getElementById('c-zhem').checked = !!currentKp.cases.zhem;
   document.getElementById('c-art').checked = !!currentKp.cases.art;
   document.getElementById('c-kit').checked = !!currentKp.cases.kit;
+  fillTermFields(currentKp.terms);
   showTab('constructor');
   renderConstructor();
+}
+
+function fillTermFields(terms) {
+  document.getElementById('in-term-sroki').value = terms.sroki;
+  document.getElementById('in-term-pravki').value = terms.pravki;
+  document.getElementById('in-term-oplata').value = terms.oplata;
+  document.getElementById('in-term-peredacha').value = terms.peredacha;
 }
 
 function addItem() {
@@ -93,6 +115,12 @@ function syncFormIntoState() {
     art: document.getElementById('c-art').checked,
     kit: document.getElementById('c-kit').checked
   };
+  currentKp.terms = {
+    sroki: document.getElementById('in-term-sroki').value,
+    pravki: document.getElementById('in-term-pravki').value,
+    oplata: document.getElementById('in-term-oplata').value,
+    peredacha: document.getElementById('in-term-peredacha').value
+  };
 }
 
 // Полная перерисовка: строки сметы + предпросмотр. Только для структурных
@@ -103,13 +131,13 @@ function renderConstructor() {
   refreshPreview();
 }
 
-// Захватывает то, что пользователь вручную поправил в редактируемых блоках
-// документа, чтобы следующая перерисовка не затёрла эти правки.
+// Захватывает то, что пользователь вручную поправил в тексте "Цели
+// сотрудничества" прямо в превью, чтобы следующая перерисовка не затёрла
+// правку. "Условия работы" в отличие от цели редактируются в левой панели
+// обычными textarea (см. syncFormIntoState), поэтому им такой захват не нужен.
 function captureEditableState() {
   const g = document.getElementById('goal-edit');
-  const t = document.getElementById('terms-edit');
   if (g) currentKp.goalHtml = g.innerHTML;
-  if (t) currentKp.termsHtml = t.innerHTML;
 }
 
 // Лёгкое обновление: суммы + документ-предпросмотр, без пересборки строк сметы.
@@ -135,24 +163,6 @@ function refreshPreview() {
   const hasMonth = monthItems.length > 0;
 
   const goalDefault = `Создание сильного digital-присутствия проекта${niche ? ' в нише «' + niche + '»' : ''}: ${hasMonth ? 'системное ежемесячное сопровождение' : ''}${hasMonth && hasOnce ? ' + ' : ''}${hasOnce ? 'разовая реализация ключевых задач' : ''}${!hasOnce && !hasMonth ? 'полное погружение в задачи маркетинга' : ''}.${pain ? '\n\nТекущая ситуация: ' + pain + '.' : ''}`;
-
-  const termsDefault = `
-        <div class="term-block">
-          <div class="tt">Сроки</div>
-          <div class="td2">${hasOnce ? 'Разовые работы — от 7 до 14 рабочих дней с момента согласования брифа.' : ''} ${hasMonth ? 'Ежемесячное сопровождение — на постоянной основе, по календарному плану.' : ''}</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Правки</div>
-          <div class="td2">В стоимость включено до 2 раундов правок на этапе реализации. Изменения сверх согласованного объёма обсуждаются отдельно.</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Оплата</div>
-          <div class="td2">${hasOnce ? 'Разовые работы — предоплата 50%, остаток после сдачи. ' : ''}${hasMonth ? 'Ежемесячное сопровождение — оплата в начале каждого месяца.' : ''}</div>
-        </div>
-        <div class="term-block">
-          <div class="tt">Передача материалов</div>
-          <div class="td2">После оплаты клиент получает доступ ко всем разработанным материалам в формате, пригодном для дальнейшего использования.</div>
-        </div>`;
 
   const kpDate = currentKp.createdAt ? new Date(currentKp.createdAt) : new Date();
 
@@ -220,8 +230,24 @@ function refreshPreview() {
 
     <div class="kp-block">
       <h3 class="kp-h">Условия работы</h3>
-      <div class="terms-grid" contenteditable="true" id="terms-edit" oninput="captureEditableState()">${currentKp.termsHtml != null ? currentKp.termsHtml : termsDefault}</div>
-      <div class="editable-note">✎ блок условий тоже редактируется прямо здесь</div>
+      <div class="terms-grid">
+        <div class="term-block">
+          <div class="tt">Сроки</div>
+          <div class="td2">${escapeHtml(currentKp.terms.sroki).replace(/\n/g, '<br>')}</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Правки</div>
+          <div class="td2">${escapeHtml(currentKp.terms.pravki).replace(/\n/g, '<br>')}</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Оплата</div>
+          <div class="td2">${escapeHtml(currentKp.terms.oplata).replace(/\n/g, '<br>')}</div>
+        </div>
+        <div class="term-block">
+          <div class="tt">Передача материалов</div>
+          <div class="td2">${escapeHtml(currentKp.terms.peredacha).replace(/\n/g, '<br>')}</div>
+        </div>
+      </div>
     </div>
 
     <div class="perforation"></div>
@@ -268,8 +294,9 @@ function caseCard(key) {
   return `
     <div class="case-card ${c.tone}">
       <div class="cname">${c.name}</div>
-      <div class="cdesc">${c.desc}</div>
-      <div class="cresult">${c.result}</div>
+      <div class="crow"><b>Было:</b> ${c.before}</div>
+      <div class="crow"><b>Сделали:</b> ${c.done}</div>
+      <div class="crow cresult"><b>Результат:</b> ${c.result}</div>
     </div>`;
 }
 
