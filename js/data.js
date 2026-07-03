@@ -21,9 +21,9 @@ const CASES = {
 };
 
 const CONTACTS = {
-  telegram: '@agency_apex &nbsp;·&nbsp; @MILOVANOVV',
+  telegram: '@whysasha66',
   email: 'agency.apex@yandex.ru',
-  phone: '+7 (977) 973-97-81'
+  phone: '+7 (905) 751-11-61'
 };
 
 // Статусы КП: ключ -> { label, color }
