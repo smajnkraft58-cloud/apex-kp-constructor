@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX — Конструктор КП</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div>
+        <div class="logo">APEX</div>
+        <div class="sub">Цифровое агентство</div>
+      </div>
+      <div class="topbar-tool">Конструктор КП</div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-constructor" onclick="showTab('constructor')">Конструктор</button>
+      <button class="tab-btn" id="tab-history" onclick="showTab('history')">История КП</button>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="newKp()">Новое КП</button>
+      <button class="btn btn-ghost" onclick="saveAndToast()">Сохранить</button>
+      <button class="btn btn-primary" id="pdfBtn" onclick="exportPDF()">Скачать PDF</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-constructor" style="display:grid;">
+    <div class="panel">
+      <h2>Клиент</h2>
+      <div class="field">
+        <label>Название проекта / клиента</label>
+        <input type="text" id="in-client" placeholder="напр. Кофейня «Ремесло»" oninput="renderConstructor()">
+      </div>
+      <div class="field">
+        <label>Ниша</label>
+        <input type="text" id="in-niche" placeholder="напр. кофейня, ИИ-стартап, барбершоп" oninput="renderConstructor()">
+      </div>
+      <div class="field">
+        <label>Контекст / боль клиента</label>
+        <textarea id="in-pain" placeholder="напр. рейтинг 4.1 на Картах, 12 отзывов, жалобы на медленный сервис" oninput="renderConstructor()"></textarea>
+      </div>
+
+      <h2>Смета</h2>
+      <div id="items-wrap"></div>
+      <button class="add-item" onclick="addItem()">+ Добавить позицию</button>
+
+      <div class="totals-box">
+        <div class="totals-row"><span>Разовые работы</span><span id="sumOnce">0 ₽</span></div>
+        <div class="totals-row"><span>Ежемесячно</span><span id="sumMonth">0 ₽</span></div>
+        <div class="totals-row sum"><span>Итого к старту</span><span id="sumTotal">0 ₽</span></div>
+      </div>
+      <div class="hint">В КП разовые и ежемесячные позиции считаются и показываются отдельно.</div>
+
+      <h2>Кейсы в КП</h2>
+      <div class="case-toggle">
+        <label class="case-chip"><input type="checkbox" id="c-zhem" checked onchange="renderConstructor()"> Жемчужина</label>
+        <label class="case-chip"><input type="checkbox" id="c-art" checked onchange="renderConstructor()"> АртВитрина</label>
+        <label class="case-chip"><input type="checkbox" id="c-kit" checked onchange="renderConstructor()"> КИТ</label>
+      </div>
+      <div class="hint">По умолчанию — все три кейса. Снимите галочку, если какой-то не подходит под клиента.</div>
+    </div>
+
+    <div class="preview-wrap">
+      <div id="kp-doc"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-history" style="display:none;">
+    <div id="history-wrap" class="history-page"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/util.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/constructor.js"></script>
+<script src="js/history.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
