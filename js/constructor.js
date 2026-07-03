@@ -365,29 +365,52 @@ async function exportPDF() {
     wrap.scrollTop = 0;
   }
   try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      windowWidth: document.documentElement.scrollWidth,
-      windowHeight: el.scrollHeight + 100
-    });
+    // Каждый смысловой блок (.kp-block) захватывается и добавляется в PDF
+    // отдельно, а не одним общим скриншотом всего документа — иначе нарезка
+    // по высоте A4 может пройти прямо посередине блока (например, контактов
+    // или карточки кейса), разрезав его между двумя страницами.
+    const blocks = Array.from(el.querySelectorAll('.kp-block'));
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageW = 210, pageH = 297;
-    const imgW = pageW;
-    const imgH = canvas.height * imgW / canvas.width;
-    let heightLeft = imgH;
-    let position = 0;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-    heightLeft -= pageH;
-    while (heightLeft > 0) {
-      position = heightLeft - imgH;
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-      heightLeft -= pageH;
+    let y = 0;
+    let pageHasContent = false;
+
+    for (const block of blocks) {
+      const canvas = await html2canvas(block, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      const imgW = pageW;
+      const imgH = canvas.height * imgW / canvas.width;
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      if (imgH > pageH) {
+        // Сам блок выше страницы (например, смета с очень длинным списком
+        // позиций) — резать всё равно негде, поэтому нарезаем по высоте
+        // страницы только этот блок, начиная с чистой страницы.
+        if (pageHasContent) { pdf.addPage(); y = 0; }
+        let heightLeft = imgH;
+        let position = 0;
+        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+          heightLeft -= pageH;
+        }
+        y = imgH % pageH;
+        pageHasContent = true;
+        continue;
+      }
+
+      if (pageHasContent && y + imgH > pageH) {
+        pdf.addPage();
+        y = 0;
+      }
+      pdf.addImage(imgData, 'JPEG', 0, y, imgW, imgH);
+      y += imgH;
+      pageHasContent = true;
     }
+
     const clientName = currentKp.client || 'Проект';
     pdf.save(`APEX_KP_${currentKp.number}_${clientName.replace(/[^a-zA-Zа-яА-Я0-9]+/g, '_')}.pdf`);
     toast(`КП №${currentKp.number} сохранено в историю и выгружено в PDF`);
