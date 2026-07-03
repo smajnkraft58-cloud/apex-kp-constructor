@@ -113,9 +113,12 @@ function captureEditableState() {
 }
 
 // Лёгкое обновление: суммы + документ-предпросмотр, без пересборки строк сметы.
+// captureEditableState() здесь НЕ вызывается: она нужна только как прямая
+// реакция на ввод в самих goal-edit/terms-edit (см. их oninput в шаблоне ниже).
+// Если вызывать её здесь тоже, currentKp.goalHtml "замораживается" уже на первом
+// же refreshPreview() и авто-текст цели перестаёт обновляться при смене ниши/сметы.
 function refreshPreview() {
   syncFormIntoState();
-  captureEditableState();
 
   const t = computeTotals(currentKp.items);
   document.getElementById('sumOnce').textContent = fmtMoney(t.once);
@@ -273,7 +276,6 @@ function caseCard(key) {
 // Текстовое представление текущей КП — для отправки в Telegram/почту без PDF.
 function buildKpPlainText() {
   syncFormIntoState();
-  captureEditableState();
   const t = computeTotals(currentKp.items);
   const client = currentKp.client || 'Проект';
   const niche = currentKp.niche;
@@ -335,7 +337,6 @@ async function copyKpText() {
 // Сохраняет текущую КП в историю (создаёт запись или обновляет существующую)
 function saveCurrentKp() {
   syncFormIntoState();
-  captureEditableState();
   const t = computeTotals(currentKp.items);
   currentKp.totals = t;
   if (!currentKp.id) currentKp.id = uid();
@@ -350,8 +351,27 @@ async function exportPDF() {
   btn.disabled = true; btn.textContent = 'Готовим PDF...';
   saveCurrentKp();
   const el = document.getElementById('kp-doc');
+  // #kp-doc лежит в прокручиваемом .preview-wrap (overflow-y:auto). Если окно
+  // ниже, чем весь документ, html2canvas без этих правок захватывает только
+  // видимую прокрученную часть и обрезает остальное. Снимаем ограничение на
+  // время захвата и восстанавливаем после.
+  const wrap = el.closest('.preview-wrap');
+  const prevOverflow = wrap ? wrap.style.overflowY : '';
+  const prevMaxHeight = wrap ? wrap.style.maxHeight : '';
+  const prevScrollTop = wrap ? wrap.scrollTop : 0;
+  if (wrap) {
+    wrap.style.overflowY = 'visible';
+    wrap.style.maxHeight = 'none';
+    wrap.scrollTop = 0;
+  }
   try {
-    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: el.scrollHeight + 100
+    });
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageW = 210, pageH = 297;
@@ -373,6 +393,11 @@ async function exportPDF() {
     toast(`КП №${currentKp.number} сохранено в историю и выгружено в PDF`);
   } catch (e) {
     alert('Не получилось собрать PDF: ' + e.message);
+  }
+  if (wrap) {
+    wrap.style.overflowY = prevOverflow;
+    wrap.style.maxHeight = prevMaxHeight;
+    wrap.scrollTop = prevScrollTop;
   }
   btn.disabled = false; btn.textContent = 'Скачать PDF';
 }
