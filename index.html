@@ -27,6 +27,7 @@
     <div style="display:flex;gap:10px;">
       <button class="btn btn-ghost" onclick="newKp()">Новое КП</button>
       <button class="btn btn-ghost" onclick="saveAndToast()">Сохранить</button>
+      <button class="btn btn-ghost" onclick="copyKpText()">Скопировать текст</button>
       <button class="btn btn-primary" id="pdfBtn" onclick="exportPDF()">Скачать PDF</button>
     </div>
   </div>
@@ -76,6 +77,9 @@
     <div id="history-wrap" class="history-page"></div>
   </div>
 </div>
+
+<input type="file" id="backup-file-input" accept="application/json" style="display:none;" onchange="handleBackupFileSelected(event)">
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

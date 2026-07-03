@@ -57,3 +57,40 @@ function setRecordStatus(id, status) {
   }
   return rec;
 }
+
+// Обновляет заметку без пересчёта updatedAt — иначе запись "прыгала" бы по
+// дате правки, что мешало бы истории и фильтрам по дате.
+function setRecordNote(id, notes) {
+  const records = loadRecords();
+  const rec = records.find(r => r.id === id);
+  if (rec) {
+    rec.notes = notes;
+    saveRecords(records);
+  }
+  return rec;
+}
+
+function exportBackupJson() {
+  return JSON.stringify({
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    records: loadRecords(),
+    counter: parseInt(localStorage.getItem(LS_COUNTER), 10) || COUNTER_START
+  }, null, 2);
+}
+
+// Возвращает {ok:true} или {ok:false, error} — вызывающий код сам решает, как сообщить об ошибке.
+function importBackupJson(jsonStr) {
+  let data;
+  try {
+    data = JSON.parse(jsonStr);
+  } catch (e) {
+    return { ok: false, error: 'Файл повреждён или это не JSON.' };
+  }
+  if (!data || !Array.isArray(data.records)) {
+    return { ok: false, error: 'В файле нет списка КП (records).' };
+  }
+  saveRecords(data.records);
+  if (data.counter) localStorage.setItem(LS_COUNTER, String(data.counter));
+  return { ok: true };
+}

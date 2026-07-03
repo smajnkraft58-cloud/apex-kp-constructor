@@ -11,6 +11,7 @@ function blankKp() {
     items: [{ id: uid(), name: '', type: 'once', price: '' }],
     cases: { zhem: true, art: true, kit: true },
     goalHtml: null, termsHtml: null,
+    notes: '',
     createdAt: null, updatedAt: null
   };
 }
@@ -267,6 +268,68 @@ function caseCard(key) {
       <div class="cdesc">${c.desc}</div>
       <div class="cresult">${c.result}</div>
     </div>`;
+}
+
+// Текстовое представление текущей КП — для отправки в Telegram/почту без PDF.
+function buildKpPlainText() {
+  syncFormIntoState();
+  captureEditableState();
+  const t = computeTotals(currentKp.items);
+  const client = currentKp.client || 'Проект';
+  const niche = currentKp.niche;
+  const kpDate = currentKp.createdAt ? new Date(currentKp.createdAt) : new Date();
+  const goalEl = document.getElementById('goal-edit');
+  const goalText = goalEl ? goalEl.innerText.trim() : '';
+
+  const onceItems = currentKp.items.filter(i => i.type === 'once' && (i.name || i.price));
+  const monthItems = currentKp.items.filter(i => i.type === 'month' && (i.name || i.price));
+
+  const lines = [];
+  lines.push(`КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ №${currentKp.number} от ${fmtDate(kpDate)}`);
+  lines.push(`Проект: «${client}»${niche ? ' · ' + niche : ''}`);
+  lines.push('');
+  if (goalText) {
+    lines.push('ЦЕЛЬ СОТРУДНИЧЕСТВА');
+    lines.push(goalText);
+    lines.push('');
+  }
+  if (onceItems.length || monthItems.length) {
+    lines.push('СМЕТА');
+    [...onceItems, ...monthItems].forEach(it => {
+      const price = fmtMoney(parseFloat(it.price) || 0) + (it.type === 'month' ? '/мес' : '');
+      lines.push(`— ${it.name || '—'}: ${price}`);
+    });
+    if (t.once) lines.push(`Итого разово: ${fmtMoney(t.once)}`);
+    if (t.month) lines.push(`Итого ежемесячно: ${fmtMoney(t.month)}/мес`);
+    lines.push('');
+  }
+  lines.push('КОНТАКТЫ APEX');
+  lines.push(`Telegram: ${CONTACTS.telegram.replace(/&nbsp;/g, ' ')}`);
+  lines.push(`Почта: ${CONTACTS.email}`);
+  lines.push(`Телефон: ${CONTACTS.phone}`);
+  return lines.join('\n');
+}
+
+async function copyKpText() {
+  const text = buildKpPlainText();
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Текст КП скопирован в буфер обмена');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      toast('Текст КП скопирован в буфер обмена');
+    } catch (e2) {
+      alert('Не удалось скопировать автоматически. Текст КП:\n\n' + text);
+    }
+    document.body.removeChild(ta);
+  }
 }
 
 // Сохраняет текущую КП в историю (создаёт запись или обновляет существующую)
